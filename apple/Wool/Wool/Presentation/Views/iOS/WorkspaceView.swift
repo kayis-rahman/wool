@@ -1891,6 +1891,10 @@ private struct ReviewView: View {
         } else {
             let newReview = WeeklyReviewService.shared.makeWeeklyReview()
             modelContext.insert(newReview)
+            for item in newReview.checklistItems ?? [] {
+                item.review = newReview
+                modelContext.insert(item)
+            }
             review = newReview
         }
         if let review {

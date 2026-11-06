@@ -186,7 +186,12 @@ struct StartWeeklyReviewIntent: AppIntent {
         let service = await WeeklyReviewService.shared
         if await service.resumeReview(from: reviews) == nil,
            await service.review(forWeekContaining: .now, from: reviews) == nil {
-            context.insert(await service.makeWeeklyReview())
+            let newReview = await service.makeWeeklyReview()
+            context.insert(newReview)
+            for item in newReview.checklistItems ?? [] {
+                item.review = newReview
+                context.insert(item)
+            }
             try WoolIntentSupport.save(context)
         }
         UserDefaults.standard.set("weekly-review", forKey: WoolModelContainer.pendingDestinationKey)
