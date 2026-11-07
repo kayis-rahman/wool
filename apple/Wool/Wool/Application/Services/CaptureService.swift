@@ -127,7 +127,7 @@ final class CaptureService {
 
             let result = await group.next()
             group.cancelAll()
-            return result
+            return result.flatMap { $0 }
         }
     }
 
