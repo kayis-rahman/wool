@@ -64,7 +64,7 @@ struct AboutView: View {
     }
 
     private func openPrivacyPolicy() {
-        guard let url = URL(string: "https://github.com/kayis-rahman/wool/blob/develop/docs/privacy.md") else { return }
+        guard let url = URL(string: "https://github.com/kayis-rahman/wool/blob/main/docs/privacy.md") else { return }
         #if os(iOS)
         UIApplication.shared.open(url)
         #elseif os(watchOS)
@@ -75,7 +75,7 @@ struct AboutView: View {
     }
 
     private func openHelpAndSupport() {
-        guard let url = URL(string: "https://github.com/kayis-rahman/wool/blob/develop/docs/support.md") else { return }
+        guard let url = URL(string: "https://github.com/kayis-rahman/wool/blob/main/docs/support.md") else { return }
         #if os(iOS)
         UIApplication.shared.open(url)
         #elseif os(watchOS)
