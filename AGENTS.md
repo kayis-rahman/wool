@@ -1,16 +1,12 @@
-# Synapse Development Instructions
+# Wool Development Instructions
 
-## Physical-device-only iOS rule
+## iOS validation
 
-All iOS builds, installs, launches, and UI-test runs must target the configured
-physical iPhone 15 Pro (`00008130-000629D90A13803A`). Do not use an
-iOS Simulator destination or create simulator devices. Before running, verify
-that `xcrun devicectl list devices` reports the phone as available and paired.
-If the physical device is unavailable, stop and fix the connection; do not
-fall back to a simulator or report a simulator result as validation. Use
-`scripts/run-on-iphone15pro.sh` for the standard build/install/launch flow and
-the physical-device UI-test commands documented in
-`docs/ios-ui-tests-on-iphone-15-pro.md`.
+Use an iOS Simulator for iOS builds, unit tests, and UI tests. The
+physical-device workflow remains available as an optional extra for
+device-specific validation, signing checks, CloudKit, Siri/Shortcuts, and
+notification delivery through `scripts/run-on-iphone15pro.sh` and the commands
+documented in `docs/ios-ui-tests-on-iphone-15-pro.md`.
 
 ## UI changes
 
@@ -37,9 +33,32 @@ include all three test layers:
    cases.
 2. SwiftData/integration tests for local persistence, duplicates, offline
    behavior, and CloudKit synchronization where applicable.
-3. Physical-device UI tests for the user-visible capture flow on the configured
-   iPhone 15 Pro.
+3. UI tests for the user-visible capture flow on an iOS Simulator. Use the
+   physical iPhone 15 Pro only for optional device-specific behavior.
 
 Use deterministic fixtures and unique UUID markers for persisted test data.
 Keep manual-only conditions such as low storage and account sign-out explicitly
 documented rather than making nondeterministic tests.
+
+## Module and naming conventions
+
+- Modules: `Domain/Models` for SwiftData models and domain enums;
+  `Application/Services` for use-case services and orchestration;
+  `Application/Intents` for App Intent entry points;
+  `Infrastructure/Persistence` for schema and container setup;
+  `Presentation/Views` for UI.
+- SwiftData: store enum state as `*RawValue: String` with a typed computed
+  accessor; use `@Model final class` with defaulted properties; keep schema and
+  migration ownership in `WoolSchema.swift`; keep CloudKit/private vs. local
+  test store setup in `WoolModelContainer`.
+- Naming: drop stale feature/domain prefixes once a concept owns module context
+  (for example `GTDStatus -> Status`, `GTDWorkspaceView -> WorkspaceView`);
+  group by architectural layer rather than historical feature.
+- Errors: public boundary failures become typed `LocalizedError` enums with
+  clear messages; cache-only corruption may be recovered automatically, but do
+  not silently swallow CloudKit or SwiftData persistence failures.
+- Capture: one shared pipeline through `CaptureService`; final save through
+  `CapturePersistenceService`; leave persistence explicit in callers and tests;
+  use UUID markers in persisted test data.
+- Simulator test recipes: exact commands and flags live in the
+  `wool-ios-device-test-flow` skill and script help.

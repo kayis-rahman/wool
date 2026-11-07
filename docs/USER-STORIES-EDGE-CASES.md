@@ -11,7 +11,7 @@
 
 ## 2. AI Auto-Triage
 
-*As a user, I want captured items auto-categorized into GTD buckets, so I don't manually sort everything.*
+*As a user, I want captured items auto-categorized into task organization buckets, so I don't manually sort everything.*
 
 - Edge: device lacks Apple Intelligence → falls back to heuristic rules, user sees no visible difference in flow
 - Edge: AI miscategorizes → user can override with one tap, correction doesn't retrain AI (no learning loop initially)
@@ -77,7 +77,7 @@
 
 - Unit/service: normalize names, reject blank values, reject case/whitespace/diacritic duplicates, and validate stale-tag and multi-Area filtering.
 - SwiftData/integration: persist assignments, unlink deleted Areas, preserve remaining assignments, keep unassigned items queryable, and verify deterministic offline/conflict fixtures.
-- Physical-device UI: create an Area, reject a duplicate, use All areas and Uncategorized filters, filter seeded tasks, delete a linked Area, and verify the resulting Uncategorized state on the configured iPhone 15 Pro.
+- Simulator UI: create an Area, reject a duplicate, use All areas and Uncategorized filters, filter seeded tasks, delete a linked Area, and verify the resulting Uncategorized state on an iOS Simulator.
 
 ## 8. Weekly Review
 
@@ -110,7 +110,7 @@
 
 - Unit/service: verify resume selection, same-week reuse, step transitions, skip/partial status, empty-stale auto-completion, stale snapshot refresh, unresolved stale partial completion, idempotent finish, duplicate-week streak handling, date boundaries, and deterministic AI fallback.
 - SwiftData/integration: verify progress survives save/reload, same-week review uniqueness, stale-task removal after external completion, local/offline operation, and unique UUID fixtures.
-- Physical-device UI: on the configured iPhone 15 Pro, verify starting the checklist, empty-stale completion, resuming after relaunch, skipping steps, unresolved stale partial completion, visible progress, and accessible controls.
+- Simulator UI: on an iOS Simulator, verify starting the checklist, empty-stale completion, resuming after relaunch, skipping steps, unresolved stale partial completion, visible progress, and accessible controls.
 
 ## 9. Daily Briefing
 
@@ -170,7 +170,7 @@ transcription, and send it through AI Auto-Triage.*
 - Edge: user cancels OAuth consent → no partial connection is created and existing Gmail connections remain unchanged
 - Edge: required OAuth scopes are missing → integration remains inactive and explains which permission is required
 - Edge: user revokes Gmail access externally → app detects the authorization failure on the next sync attempt, marks the integration disconnected, and preserves previously imported items
-- Edge: Gmail account is disconnected in Synapse → no future imports occur; existing items are retained unless the user explicitly chooses to delete them
+- Edge: Gmail account is disconnected in Wool → no future imports occur; existing items are retained unless the user explicitly chooses to delete them
 - Edge: multiple Gmail accounts are connected → each item records its source account and disconnecting one account does not affect the others
 - Edge: email has no clear action → still imported to Inbox as a raw item, without inventing an action, and user triages manually
 - Edge: email is informational, promotional, a newsletter, spam, or in Trash → import behavior follows explicit user rules; excluded messages are not silently treated as actionable
@@ -197,7 +197,7 @@ transcription, and send it through AI Auto-Triage.*
   and tasks persist together, repeated syncs are idempotent, checkpoints resume
   safely, disconnect preserves local items, and unique UUID fixtures isolate
   test data.
-- Physical-device UI: on the configured iPhone 15 Pro, verify the feature-flagged
+- Simulator UI: on an iOS Simulator, verify the feature-flagged
   Gmail settings section, connected/paused/disconnected states, manual sync,
   imported raw Inbox content, and disconnect confirmation using deterministic
   fixtures. Live OAuth, token expiry, and external revocation remain manual
@@ -207,8 +207,8 @@ transcription, and send it through AI Auto-Triage.*
 
 *As a user, I want GitHub issues to appear as Next Actions or Waiting For.*
 
-- Edge: issue closed on GitHub while open in Synapse → next sync marks it complete
-- Edge: same issue linked in multiple Synapse items (edge case from re-import) → dedup by GitHub issue ID
+- Edge: issue closed on GitHub while open in Wool → next sync marks it complete
+- Edge: same issue linked in multiple Wool items (edge case from re-import) → dedup by GitHub issue ID
 
 ## 16. EventKit / Calendar
 
@@ -238,19 +238,19 @@ transcription, and send it through AI Auto-Triage.*
 - Edge: the briefing is generated repeatedly or the app is offline → fetch calendar data live for the current briefing only; do not persist calendar event snapshots in SwiftData
 - Edge: calendar data is unavailable to the AI narrative → the deterministic calendar section still renders, and the narrative must not invent event titles, times, or commitments
 - Edge: the briefing is invoked by Siri/App Intents or while the device is locked → respect calendar authorization and privacy rules; do not read private event details aloud or expose them in notifications unless explicitly allowed
-- Edge: user taps a calendar event → v1 remains read-only; it does not modify EventKit, create a Synapse task, or silently link existing tasks
-- Edge: the user has no tasks but has calendar events → show the calendar context without implying that events are Synapse tasks; a positive empty-task state remains visible
-- Edge: calendar events and Synapse tasks have similar titles or times → keep their identities and actions distinct; never auto-link, complete, or create a task from an event without an explicit user action
+- Edge: user taps a calendar event → v1 remains read-only; it does not modify EventKit, create a Wool task, or silently link existing tasks
+- Edge: the user has no tasks but has calendar events → show the calendar context without implying that events are Wool tasks; a positive empty-task state remains visible
+- Edge: calendar events and Wool tasks have similar titles or times → keep their identities and actions distinct; never auto-link, complete, or create a task from an event without an explicit user action
 
 ### EventKit acceptance tests
 
 - Unit/service: verify permission/error fallbacks, all-day versus timed sections, multi-day and recurring occurrences, exact day-boundary inclusion, timezone/DST behavior, stable-ID deduplication, malformed-event filtering, ordering, event caps, and separation from task due dates.
 - SwiftData/integration: verify the briefing remains usable offline, calendar failures do not affect local task persistence, repeated briefing generation is idempotent, and one coherent event snapshot is used per result.
-- Physical-device UI: on the configured iPhone 15 Pro, verify the permitted flow with timed, all-day, multi-day, overlapping, and empty-task fixtures; verify denied/revoked access omits the section and that the briefing remains navigable.
+- Simulator UI: on an iOS Simulator, verify the permitted flow with timed, all-day, multi-day, overlapping, and empty-task fixtures; verify denied/revoked access omits the section and that the briefing remains navigable.
 
 ## 17. Apple Reminders Import
 
-*As a user, I want to migrate my existing Reminders into Synapse once.*
+*As a user, I want to migrate my existing Reminders into Wool once.*
 
 - Edge: import run twice → duplicate detection by title+date, second run skips existing matches
 - Edge: Reminders list has 1000+ items (matches your actual Database list) → import runs in background, progress indicator, doesn't block UI

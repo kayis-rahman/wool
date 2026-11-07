@@ -1,28 +1,51 @@
 #!/bin/zsh
 set -euo pipefail
 
-PROJECT="apple/Synapse/Synapse.xcodeproj"
-SCHEME="Synapse iOS"
-APP_BUNDLE_ID="com.sparkage.synapse.ios"
-BUILD_DERIVED_DATA="/private/tmp/synapse-iphone15pro-derived"
-TEST_DERIVED_DATA="/private/tmp/synapse-iphone15pro-ui-tests"
+PROJECT="apple/Wool/Wool.xcodeproj"
+SCHEME="Wool iOS"
+APP_BUNDLE_ID="com.sparkage.wool.ios"
+BUILD_DERIVED_DATA="/private/tmp/wool-iphone15pro-derived"
+TEST_DERIVED_DATA="/private/tmp/wool-iphone15pro-ui-tests"
 SCRIPT_NAME="${0:t}"
 
 usage() {
-  print "Usage: ./$SCRIPT_NAME [--test [TEST_IDENTIFIER]]"
+  print "Usage: ./$SCRIPT_NAME [--test [TEST_IDENTIFIER...]]"
+  print "       ./$SCRIPT_NAME --test-each TEST_IDENTIFIER..."
   print ""
-  print "Without arguments, builds, installs, and launches Synapse."
-  print "With --test, runs physical-device UI tests. TEST_IDENTIFIER defaults to:"
-  print "  SynapseUITests/GTDWorkspaceUITests"
+  print "Without arguments, builds, installs, and launches Wool."
+  print ""
+  print "--test [TEST_IDENTIFIER...]"
+  print "  Runs physical-device UI tests in one xcodebuild invocation. Accepts one"
+  print "  or more -only-testing identifiers as separate arguments. Defaults to:"
+  print "    WoolUITests/WorkspaceUITests"
+  print ""
+  print "--test-each TEST_IDENTIFIER..."
+  print "  Builds for testing once, then runs each given identifier as its own"
+  print "  test-without-building invocation (one process launch per test, same"
+  print "  build) and prints a PASS/FAIL summary line per test. Use this instead"
+  print "  of looping --test yourself: it skips the xcodebuild rebuild check"
+  print "  between tests, which is most of the per-test overhead when iterating"
+  print "  one test at a time."
 }
 
 MODE="run"
-TEST_IDENTIFIER="SynapseUITests/GTDWorkspaceUITests"
+TEST_IDENTIFIERS=("WoolUITests/WorkspaceUITests")
 case "${1:-}" in
   "") ;;
   --test)
     MODE="test"
-    TEST_IDENTIFIER="${2:-$TEST_IDENTIFIER}"
+    if [[ $# -gt 1 ]]; then
+      TEST_IDENTIFIERS=("${@:2}")
+    fi
+    ;;
+  --test-each)
+    if [[ $# -lt 2 ]]; then
+      print -u2 "--test-each requires at least one TEST_IDENTIFIER."
+      usage >&2
+      exit 2
+    fi
+    MODE="test-each"
+    TEST_IDENTIFIERS=("${@:2}")
     ;;
   -h|--help)
     usage
@@ -34,8 +57,8 @@ case "${1:-}" in
     ;;
 esac
 
-# Resolve the currently available physical iPhone 15 Pro. Never retain a stale
-# identifier and never fall back to a simulator.
+# Resolve the currently available physical iPhone 15 Pro for the optional
+# device workflow. Never retain a stale identifier.
 DEVICE_LIST_OUTPUT="$(xcrun devicectl list devices 2>&1)" || {
   print -u2 "devicectl could not enumerate devices."
   print -u2 -- "$DEVICE_LIST_OUTPUT"
@@ -88,7 +111,11 @@ if ! print -r -- "$LOCK_STATE_OUTPUT" | rg -q 'passcodeRequired: false'; then
 fi
 
 if [[ "$MODE" == "test" ]]; then
-  echo "Running $TEST_IDENTIFIER on the physical iPhone 15 Pro..."
+  ONLY_TESTING_ARGS=()
+  for id in "${TEST_IDENTIFIERS[@]}"; do
+    ONLY_TESTING_ARGS+=("-only-testing:$id")
+  done
+  echo "Running ${TEST_IDENTIFIERS[*]} on the physical iPhone 15 Pro..."
   echo "Result bundles will be under $TEST_DERIVED_DATA/Logs/Test"
   xcodebuild -quiet test \
     -project "$PROJECT" \
@@ -97,7 +124,7 @@ if [[ "$MODE" == "test" ]]; then
     -derivedDataPath "$TEST_DERIVED_DATA" \
     -allowProvisioningUpdates \
     -enableCodeCoverage NO \
-    -only-testing:"$TEST_IDENTIFIER" || {
+    "${ONLY_TESTING_ARGS[@]}" || {
       test_exit_code=$?
       print -u2 "Physical-device test failed. This is not a simulator result."
       print -u2 "Inspect $TEST_DERIVED_DATA/Logs/Test/*.xcresult with xcresulttool."
@@ -108,7 +135,46 @@ if [[ "$MODE" == "test" ]]; then
   exit 0
 fi
 
-APP_PATH="$BUILD_DERIVED_DATA/Build/Products/Debug-iphoneos/Synapse iOS.app"
+if [[ "$MODE" == "test-each" ]]; then
+  echo "Building for testing once, then running ${#TEST_IDENTIFIERS[@]} tests without rebuilding..."
+  echo "Result bundles will be under $TEST_DERIVED_DATA/Logs/Test"
+  xcodebuild -quiet build-for-testing \
+    -project "$PROJECT" \
+    -scheme "$SCHEME" \
+    -destination "platform=iOS,id=$DEVICE_ID" \
+    -derivedDataPath "$TEST_DERIVED_DATA" \
+    -allowProvisioningUpdates || {
+      print -u2 "build-for-testing failed; see output above."
+      exit 2
+    }
+
+  FAILED_TESTS=()
+  for id in "${TEST_IDENTIFIERS[@]}"; do
+    echo "=== $id ==="
+    if xcodebuild -quiet test-without-building \
+      -project "$PROJECT" \
+      -scheme "$SCHEME" \
+      -destination "platform=iOS,id=$DEVICE_ID" \
+      -derivedDataPath "$TEST_DERIVED_DATA" \
+      -only-testing:"$id"; then
+      echo "$id PASS"
+    else
+      echo "$id FAIL"
+      FAILED_TESTS+=("$id")
+    fi
+  done
+
+  echo ""
+  echo "Result bundles are under $TEST_DERIVED_DATA/Logs/Test"
+  if [[ ${#FAILED_TESTS[@]} -gt 0 ]]; then
+    print -u2 "Failed: ${FAILED_TESTS[*]}"
+    exit 1
+  fi
+  echo "All ${#TEST_IDENTIFIERS[@]} tests passed."
+  exit 0
+fi
+
+APP_PATH="$BUILD_DERIVED_DATA/Build/Products/Debug-iphoneos/Wool iOS.app"
 
 xcodebuild -quiet build \
   -project "$PROJECT" \

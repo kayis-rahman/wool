@@ -1,8 +1,8 @@
-# Synapse Release Process
+# Wool Release Process
 
 ## Versioning policy
 
-Synapse application versions use Semantic Versioning:
+Wool application versions use Semantic Versioning:
 
 ```text
 MAJOR.MINOR.PATCH
@@ -48,7 +48,7 @@ When the model does not change:
 
 ### CloudKit Development → Production
 
-- [ ] Confirm container `iCloud.com.sparkage.synapse`.
+- [ ] Confirm container `iCloud.com.sparkage.wool`.
 - [ ] Verify record types, fields, indexes, relationships, and permissions in
   Development.
 - [ ] Test new installs, existing stores, offline writes, reconnect sync, and

@@ -14,7 +14,7 @@ The repository already contains most of the Apple-project timer foundation: `Pom
 
 - Unit tests now cover generic no-task sessions, selected-task retention, reset cleanup, duplicate starts, and task metadata preservation during DTO conversion.
 - Swift integration tests now cover local generic-session persistence, task-linked session persistence, active timer snapshot restoration, deterministic UUID fixtures, and an isolated SwiftData task fixture with CloudKit disabled.
-- Physical-device UI tests now cover the no-task start flow, pause/resume, explicit `No Task` selection, and background/foreground recovery.
+- UI tests now cover the no-task start flow, pause/resume, explicit `No Task` selection, and background/foreground recovery.
 
 ### Supporting fixes included
 
@@ -31,13 +31,13 @@ The repository already contains most of the Apple-project timer foundation: `Pom
 
 - Static whitespace validation passes with `git diff --check`.
 - The repository `back-end` directory is no longer in the workspace; this feature is scoped to the Apple project.
-- Automated execution remains pending for the iPhone UI tests because CoreDevice currently reports the configured phone as connected but not `available (paired)`, and Xcode does not enumerate it as a usable physical destination.
+- Automated execution remains pending; the UI tests can run on an iOS Simulator (`docs/ios-ui-tests-on-simulator.md`).
 - The Mac test-host attempt is blocked by the project’s iOS test-host/signing configuration: the available Mac provisioning profile lacks Push Notifications, Sign in with Apple, and iCloud entitlements.
-- No simulator test result has been used or reported.
+- No simulator UI-test result has been reported for this feature yet.
 
 ### Remaining implementation and test work
 
-The tests establish the currently supported task/session behavior, but the full lifecycle plan is not complete yet. Remaining work includes durable lifecycle-record persistence beyond the active snapshot, pause-aware actual-duration accounting, idempotent completion/upload handling, richer interruption status, task-change locking while running, and physical-device execution of the new UI tests.
+The tests establish the currently supported task/session behavior, but the full lifecycle plan is not complete yet. Remaining work includes durable lifecycle-record persistence beyond the active snapshot, pause-aware actual-duration accounting, idempotent completion/upload handling, richer interruption status, task-change locking while running, and simulator execution of the new UI tests.
 
 ## Product behavior
 
@@ -249,9 +249,9 @@ Extend:
 
 Verify active and paused state across relaunch, expired-session completion exactly once, generic sessions with null task IDs, task-linked sessions, deleted-task history, offline queue/retry, duplicate upload handling, CloudKit conflict resolution, and deterministic multi-device state resolution.
 
-### Physical-device UI tests
+### Simulator UI tests
 
-Run only on the configured physical iPhone 15 Pro. Verify:
+Run on an iOS Simulator. Verify:
 
 - start with a task;
 - start without a task;
@@ -265,7 +265,7 @@ Run only on the configured physical iPhone 15 Pro. Verify:
 - task deletion/archive during a session; and
 - task-change behavior while running.
 
-Use `docs/ios-ui-tests-on-iphone-15-pro.md` and `scripts/run-on-iphone15pro.sh`.
+Use `docs/ios-ui-tests-on-simulator.md` and `scripts/run-on-simulator.sh`.
 
 ## Current repository gaps to address
 
@@ -284,4 +284,4 @@ Use `docs/ios-ui-tests-on-iphone-15-pro.md` and `scripts/run-on-iphone15pro.sh`.
 - Abandoned sessions are excluded from completed productive totals.
 - Completion and upload operations are idempotent.
 - Local persistence, CloudKit synchronization, and analytics agree.
-- Unit, integration, and physical-device UI tests pass on the configured physical device.
+- Unit, integration, and UI tests pass on an iOS Simulator.

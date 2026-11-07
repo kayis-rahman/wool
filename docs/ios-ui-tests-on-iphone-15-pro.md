@@ -1,7 +1,9 @@
-# Run Synapse UI Tests on a Physical iPhone 15 Pro
+# Run Wool UI Tests on a Physical iPhone 15 Pro
 
-This guide runs the Synapse iOS UI tests on the connected iPhone 15 Pro. The
-test runner uses the device currently configured in
+This optional guide runs the Wool iOS UI tests on the connected iPhone 15 Pro
+for device-specific validation. Standard iOS builds, unit tests, and UI tests
+run on an iOS Simulator instead (`docs/ios-ui-tests-on-simulator.md`). The test
+runner uses the device currently configured in
 `scripts/run-on-iphone15pro.sh`.
 
 The entire workflow can run from Terminal. Opening the Xcode app is not
@@ -15,7 +17,7 @@ required once signing is configured.
 - Developer Mode enabled on the iPhone: **Settings → Privacy & Security →
   Developer Mode**.
 - The iPhone trusted by this Mac.
-- A valid Apple development team selected for the `Synapse iOS` target.
+- A valid Apple development team selected for the `Wool iOS` target.
 - The iPhone’s iOS version supported by the installed Xcode version.
 
 Check that Xcode can see the device:
@@ -50,8 +52,8 @@ Confirm that `xcodebuild` sees the same identifier before starting a test:
 
 ```sh
 xcodebuild \
-  -project apple/Synapse/Synapse.xcodeproj \
-  -scheme "Synapse iOS" \
+  -project apple/Wool/Wool.xcodeproj \
+  -scheme "Wool iOS" \
   -showdestinations
 ```
 
@@ -78,13 +80,13 @@ The script checks the iPhone lock state before building. If it reports that
 the device is locked or CoreDevice cannot be reached, fix that connection first
 and rerun the script.
 
-The script builds the `Synapse iOS` scheme, installs the resulting app, and
-launches bundle identifier `com.sparkage.synapse.ios` on the iPhone.
+The script builds the `Wool iOS` scheme, installs the resulting app, and
+launches bundle identifier `com.sparkage.wool.ios` on the iPhone.
 
 The build output is placed in:
 
 ```text
-/private/tmp/synapse-iphone15pro-derived/Build/Products/Debug-iphoneos/Synapse iOS.app
+/private/tmp/wool-iphone15pro-derived/Build/Products/Debug-iphoneos/Wool iOS.app
 ```
 
 If signing or provisioning is requested, accept the Xcode prompts and rerun
@@ -93,7 +95,7 @@ the script with the phone unlocked.
 ## Run all UI tests on the iPhone
 
 The preferred command uses the repository script, which repeats both device
-preflight checks and refuses to use a simulator:
+preflight checks:
 
 ```sh
 ./scripts/run-on-iphone15pro.sh --test
@@ -103,31 +105,59 @@ The equivalent direct command is:
 
 ```sh
 xcodebuild test \
-  -project apple/Synapse/Synapse.xcodeproj \
-  -scheme "Synapse iOS" \
+  -project apple/Wool/Wool.xcodeproj \
+  -scheme "Wool iOS" \
   -destination "platform=iOS,id=$DEVICE_ID" \
-  -derivedDataPath /private/tmp/synapse-iphone15pro-ui-tests \
-  -only-testing:SynapseUITests/GTDWorkspaceUITests \
+  -derivedDataPath /private/tmp/wool-iphone15pro-ui-tests \
+  -only-testing:WoolUITests/WorkspaceUITests \
   -enableCodeCoverage NO \
   -allowProvisioningUpdates
 ```
 
 The UI test launch configuration adds `-ui-testing`. This bypasses normal
-backend/auth startup and uses a unique local SwiftData test store with CloudKit
-disabled, so each fresh test-app process starts with isolated local data.
+auth startup and uses a local SwiftData test store with CloudKit
+disabled. Each `XCTestCase` generates its own store id and passes it via
+`WOOL_UI_TEST_STORE_ID` on every launch it performs, so the store is
+isolated between test methods but stable across a mid-test relaunch (needed by
+tests that verify persistence survives `app.terminate()`/`app.launch()`); a
+process launched without that env var (e.g. manually) falls back to a fresh
+store id cached for that process's lifetime.
+
+### Running several tests without rebuilding between them
+
+Each `xcodebuild test` invocation re-checks the build graph even when nothing
+changed, which adds up when iterating one test at a time. `--test-each` builds
+once with `build-for-testing`, then runs each given identifier with
+`test-without-building`, printing a PASS/FAIL line per test:
+
+```sh
+./scripts/run-on-iphone15pro.sh --test-each \
+  WoolUITests/WorkspaceUITests/testHomeTaskOpensDetailsAndSaves \
+  WoolUITests/WorkspaceUITests/testDeletingAreaMovesItsTaskToUncategorized
+```
+
+`--test` itself also accepts multiple identifiers to run together in one
+`xcodebuild test` invocation (faster than `--test-each` when you don't need
+per-test isolation from a build-graph check, e.g. confirming a batch of fixes
+at once):
+
+```sh
+./scripts/run-on-iphone15pro.sh --test \
+  WoolUITests/WorkspaceUITests/testHomeTaskOpensDetailsAndSaves \
+  WoolUITests/WorkspaceUITests/testDeletingAreaMovesItsTaskToUncategorized
+```
 
 The iOS app scheme contains UI tests only. Run Weekly Review service and
-SwiftData integration tests with the separate unit-test scheme, still targeting
-the physical phone:
+SwiftData integration tests with the separate unit-test scheme:
 
 ```sh
 xcodebuild test \
-  -project apple/Synapse/Synapse.xcodeproj \
-  -scheme "Synapse iOS Unit Tests" \
+  -project apple/Wool/Wool.xcodeproj \
+  -scheme "Wool iOS Unit Tests" \
   -destination "platform=iOS,id=$DEVICE_ID" \
-  -derivedDataPath /private/tmp/synapse-weekly-review-tests \
-  -only-testing:SynapseTests/WeeklyReviewAcceptanceTests \
-  -only-testing:SynapseTests/WeeklyReviewPersistenceTests \
+  -derivedDataPath /private/tmp/wool-weekly-review-tests \
+  -only-testing:WoolTests/WeeklyReviewAcceptanceTests \
+  -only-testing:WoolTests/WeeklyReviewPersistenceTests \
   -enableCodeCoverage NO \
   -allowProvisioningUpdates
 ```
@@ -138,18 +168,18 @@ For example, to verify capture → Home → task details → save:
 
 ```sh
 ./scripts/run-on-iphone15pro.sh --test \
-  SynapseUITests/GTDWorkspaceUITests/testHomeTaskOpensDetailsAndSaves
+  WoolUITests/WorkspaceUITests/testHomeTaskOpensDetailsAndSaves
 ```
 
 Or invoke `xcodebuild` directly:
 
 ```sh
 xcodebuild test \
-  -project apple/Synapse/Synapse.xcodeproj \
-  -scheme "Synapse iOS" \
+  -project apple/Wool/Wool.xcodeproj \
+  -scheme "Wool iOS" \
   -destination "platform=iOS,id=$DEVICE_ID" \
-  -derivedDataPath /private/tmp/synapse-iphone15pro-ui-tests-focused \
-  -only-testing:SynapseUITests/GTDWorkspaceUITests/testHomeTaskOpensDetailsAndSaves \
+  -derivedDataPath /private/tmp/wool-iphone15pro-ui-tests-focused \
+  -only-testing:WoolUITests/WorkspaceUITests/testHomeTaskOpensDetailsAndSaves \
   -enableCodeCoverage NO \
   -allowProvisioningUpdates
 ```
@@ -158,7 +188,7 @@ To run the Daily Briefing physical UI test:
 
 ```sh
 ./scripts/run-on-iphone15pro.sh --test \
-  SynapseUITests/GTDWorkspaceUITests/testDailyBriefingShowsPositiveEmptyStateOnDevice
+  WoolUITests/WorkspaceUITests/testDailyBriefingShowsPositiveEmptyStateOnDevice
 ```
 
 The physical test validates capture → Home → task details → save. Swift-level
@@ -167,7 +197,7 @@ behavior tests cover editing the title and preserving the task identity.
 Other useful test names are visible in:
 
 ```text
-apple/Synapse/SynapseUITests/iOS/GTDWorkspaceUITests.swift
+apple/Wool/WoolUITests/iOS/WorkspaceUITests.swift
 ```
 
 Use the same command and replace the value passed to `-only-testing` with the
@@ -178,7 +208,7 @@ test method you want to run.
 The connected phone reports iOS 27 build `24A5418b`, and the CLI is configured
 for Xcode 27 Beta 6 (`27A5252f`). The capture navigation/detail tests still use
 the explicit
-`SYNAPSE_UI_TEST_CAPTURE_TITLE` fixture set by the test itself. This keeps the
+`WOOL_UI_TEST_CAPTURE_TITLE` fixture set by the test itself. This keeps the
 physical UI test deterministic; capture classification, persistence, and
 editor mutation are verified independently by `CaptureServiceTests` and
 `CaptureIntentBehaviorTests`.
@@ -191,14 +221,14 @@ For the live Siri/Shortcuts and two-device CloudKit checks, follow
 Test results are stored below the derived-data directory, for example:
 
 ```text
-/private/tmp/synapse-iphone15pro-ui-tests/Logs/Test/*.xcresult
+/private/tmp/wool-iphone15pro-ui-tests/Logs/Test/*.xcresult
 ```
 
 Print a concise summary:
 
 ```sh
 xcrun xcresulttool get test-results summary \
-  --path /private/tmp/synapse-iphone15pro-ui-tests/Logs/Test/<result>.xcresult \
+  --path /private/tmp/wool-iphone15pro-ui-tests/Logs/Test/<result>.xcresult \
   --compact
 ```
 
@@ -206,7 +236,7 @@ Print test-level failures:
 
 ```sh
 xcrun xcresulttool get test-results tests \
-  --path /private/tmp/synapse-iphone15pro-ui-tests/Logs/Test/<result>.xcresult \
+  --path /private/tmp/wool-iphone15pro-ui-tests/Logs/Test/<result>.xcresult \
   --compact
 ```
 
@@ -215,8 +245,8 @@ opening Xcode:
 
 ```sh
 xcrun xcresulttool export attachments \
-  --path /private/tmp/synapse-iphone15pro-ui-tests/Logs/Test/<result>.xcresult \
-  --output-path /private/tmp/synapse-iphone15pro-attachments
+  --path /private/tmp/wool-iphone15pro-ui-tests/Logs/Test/<result>.xcresult \
+  --output-path /private/tmp/wool-iphone15pro-attachments
 ```
 
 The test report records the destination. Verify that its device has
@@ -241,8 +271,7 @@ The `CoreSimulatorService` text does not prove that a simulator destination was
 used. Check the original `-destination` argument and the `.xcresult` device
 metadata. In this failure mode, rerun the same command with permission to access
 Xcode/CoreDevice services outside the workspace sandbox, or run the repository
-script from an unrestricted Terminal session. Do not change the destination to
-a simulator.
+script from an unrestricted Terminal session.
 
 ### `devicectl` sees the phone but `xcodebuild` does not
 
@@ -252,8 +281,8 @@ First compare both live views:
 xcrun devicectl list devices
 
 xcodebuild \
-  -project apple/Synapse/Synapse.xcodeproj \
-  -scheme "Synapse iOS" \
+  -project apple/Wool/Wool.xcodeproj \
+  -scheme "Wool iOS" \
   -showdestinations
 ```
 
@@ -301,7 +330,7 @@ For Xcode 27’s CloudKit SDK, account status is named `CKAccountStatus`; using
 
 This is a real physical-device test result. Use `xcresulttool` to locate the
 source line and export attachments. For example, a failure in
-`GTDWorkspaceUITests.setUpWithError()` while waiting for
+`WorkspaceUITests.setUpWithError()` while waiting for
 `home-capture-ui-testing` means the app launched but did not expose the expected
 test UI. Inspect the exported UI hierarchy and screen recording before changing
 the feature assertion. If the hierarchy contains a presented sheet container
@@ -316,7 +345,7 @@ run; long UI tests can fail if the device auto-locks. The corresponding
 `devicectl` error is:
 
 ```text
-Unable to launch com.sparkage.synapse.ios because the device was not, or could not, be unlocked.
+Unable to launch com.sparkage.wool.ios because the device was not, or could not, be unlocked.
 ```
 
 Installation may succeed while launch and XCTest execution are still denied;
@@ -337,7 +366,7 @@ Developer Mode remains enabled.
 
 If `xcrun devicectl list devices` reports an XPC connection error, a
 `CoreDeviceService` timeout, or says that the provisioning parameter list could
-not be loaded, XCTest has not started yet. Do not diagnose this as a Synapse
+not be loaded, XCTest has not started yet. Do not diagnose this as a Wool
 test failure.
 
 Recover in this order:
@@ -392,7 +421,7 @@ execution fails.
 
 ### Signing or provisioning errors
 
-Open `apple/Synapse/Synapse.xcodeproj` in Xcode, select the `Synapse iOS`
+Open `apple/Wool/Wool.xcodeproj` in Xcode, select the `Wool iOS`
 target, choose the correct **Team**, and confirm the bundle identifier is
 registered. Then rerun:
 

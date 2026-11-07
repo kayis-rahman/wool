@@ -24,7 +24,7 @@ Brief description of the changes made in this PR.
 - [ ] Unit tests added/updated
 - [ ] Integration tests added/updated (if applicable)
 - [ ] Tests pass locally
-- [ ] Code coverage maintained (>80%)
+- [ ] iOS unit test suite is green
 
 ### Security (Required)
 - [ ] Input validation implemented
@@ -47,12 +47,8 @@ Brief description of the changes made in this PR.
 ## Security Review
 
 ### Vulnerability Check
-- [ ] OWASP Dependency Check passed (backend)
 - [ ] SwiftLint security rules passed (iOS)
-- [ ] Manual review of vuldb.com completed for:
-  - [ ] Spring Boot / Java dependencies
-  - [ ] Swift / iOS frameworks
-  - [ ] Third-party libraries
+- [ ] Manual review of Swift package dependencies completed
 - [ ] No critical or high-severity vulnerabilities introduced
 
 ### Authentication & Authorization

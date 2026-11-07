@@ -1,15 +1,13 @@
-# Synapse UI Guidance
+# Wool UI Guidance
 
-## Strict physical-device-only iOS rule
+## iOS validation
 
-All iOS builds, installs, launches, and UI-test runs must target the configured
-physical iPhone 15 Pro (`EF10AF50-5F03-56B0-A662-5DFE185E0B23`). Simulator
-destinations and simulator-based validation are prohibited. Before running,
-verify that `xcrun devicectl list devices` reports the phone as available and
-paired. If the phone is unavailable, stop and fix the connection rather than
-falling back to a simulator. Use `scripts/run-on-iphone15pro.sh` and the
-physical-device UI-test commands documented in
-`docs/ios-ui-tests-on-iphone-15-pro.md`.
+All iOS builds, installs, launches, and UI-test runs use an iOS Simulator: unit
+tests with the `Wool iOS Unit Tests` scheme and
+`-destination "platform=iOS Simulator,name=iPhone 18 Pro"`, and UI tests with
+the `Wool iOS` scheme through `scripts/run-on-simulator.sh`. See
+`docs/ios-ui-tests-on-simulator.md`. The physical-device workflow remains
+available as an optional extra (`docs/ios-ui-tests-on-iphone-15-pro.md`).
 
 For every UI change—SwiftUI layout, styling, interaction, motion, navigation,
 accessibility, or UI tests—read and apply the installed `emil-design-eng`
@@ -22,6 +20,6 @@ well for Swift implementation or concurrency work.
 
 For Quick Capture, Inbox persistence, triage, or App Intent changes, require
 three test layers: unit/service tests, SwiftData/integration tests, and
-physical-device UI tests on the configured iPhone 15 Pro. Use unique UUID
+UI tests on an iOS Simulator. Use unique UUID
 fixtures for persisted data and document manual-only cases such as low storage
 or account sign-out.

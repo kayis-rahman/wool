@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.business</string>
+	<key>LSMultipleInstancesProhibited</key>
+	<true/>
+	<key>NSUserNotificationAlertStyle</key>
+	<string>banner</string>
+	<key>NSUserNotificationsUsageDescription</key>
+	<string>Timer synchronization requires notifications to sync across your devices.</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Wool uses your calendar to help you prepare for the day.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Wool uses the microphone to turn spoken thoughts into editable captures.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Wool uses speech recognition to transcribe spoken captures before you review them.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
+	<key>GMAIL_OAUTH_REDIRECT_URI</key>
+	<string>com.sparkage.wool.gmail:/oauth2redirect</string>
+	<key>GMAIL_OAUTH_CLIENT_ID</key>
+	<string></string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.sparkage.wool.gmail</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>CFBundleURLName</key>
+			<string>com.sparkage.wool.notifications</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>wool</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>
