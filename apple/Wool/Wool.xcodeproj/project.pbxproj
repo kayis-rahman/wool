@@ -346,9 +346,9 @@
 			productReference = 6D5999AE2E780AE600D65722 /* WoolUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
-		6D7300EA2EAAA98400D75371 /* Wool iOS */ = {
+		6D7300EA2EAAA98400D75371 /* WoolWatchOs Watch App */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 6D7301132EAAA98600D75371 /* Build configuration list for PBXNativeTarget "Wool iOS" */;
+			buildConfigurationList = 6D7301132EAAA98600D75371 /* Build configuration list for PBXNativeTarget "WoolWatchOs Watch App" */;
 			buildPhases = (
 				6D7300E72EAAA98400D75371 /* Sources */,
 				6D7300E82EAAA98400D75371 /* Frameworks */,
@@ -358,11 +358,11 @@
 			);
 			dependencies = (
 			);
-			name = "Wool iOS";
+			name = "WoolWatchOs Watch App";
 			packageProductDependencies = (
 			);
-			productName = "Wool iOS";
-			productReference = 6D5999932E780AE301 /* Wool iOS.app */;
+			productName = "WoolWatchOs Watch App";
+			productReference = 6D7300EB2EAAA98400D75371 /* WoolWatchOs Watch App.app */;
 			productType = "com.apple.product-type.application";
 		};
 		6D7300F62EAAA98600D75371 /* WoolWatchOs Watch AppTests */ = {
@@ -485,7 +485,7 @@
 				6D5999922E780AE302 /* Wool iOS */,
 				6D5999A32E780AE600D65722 /* WoolTests */,
 				6D5999AD2E780AE600D65722 /* WoolUITests */,
-				6D7300EA2EAAA98400D75371 /* Wool iOS */,
+				6D7300EA2EAAA98400D75371 /* WoolWatchOs Watch App */,
 				6D7300F62EAAA98600D75371 /* WoolWatchOs Watch AppTests */,
 				6D7301002EAAA98600D75371 /* WoolWatchOs Watch AppUITests */,
 				7A1000052EAAA98600D75371 /* Wool Live Activity */,
@@ -625,12 +625,12 @@
 		};
 		6D7300F92EAAA98600D75371 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 6D7300EA2EAAA98400D75371 /* Wool iOS */;
+			target = 6D7300EA2EAAA98400D75371 /* WoolWatchOs Watch App */;
 			targetProxy = 6D7300F82EAAA98600D75371 /* PBXContainerItemProxy */;
 		};
 		6D7301032EAAA98600D75371 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 6D7300EA2EAAA98400D75371 /* Wool iOS */;
+			target = 6D7300EA2EAAA98400D75371 /* WoolWatchOs Watch App */;
 			targetProxy = 6D7301022EAAA98600D75371 /* PBXContainerItemProxy */;
 		};
 		7A1000092EAAA98600D75371 /* PBXTargetDependency */ = {
@@ -1316,7 +1316,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		6D7301132EAAA98600D75371 /* Build configuration list for PBXNativeTarget "Wool iOS" */ = {
+		6D7301132EAAA98600D75371 /* Build configuration list for PBXNativeTarget "WoolWatchOs Watch App" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				6D73010D2EAAA98600D75371 /* Debug */,
