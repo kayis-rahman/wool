@@ -121,10 +121,13 @@ final class CaptureIntentBehaviorTests: XCTestCase {
     }
 
     func testStartWeeklyReviewIntentPersistsAnInProgressStructuredReview() async throws {
+        let context = ModelContext(WoolModelContainer.shared)
+        try context.delete(model: WeeklyReview.self)
+        try context.save()
+
         var intent = StartWeeklyReviewIntent()
         _ = try await intent.perform()
 
-        let context = ModelContext(WoolModelContainer.shared)
         let reviews = try context.fetch(FetchDescriptor<WeeklyReview>(sortBy: [SortDescriptor(\WeeklyReview.weekStart, order: .reverse)]))
         let review = try XCTUnwrap(reviews.first)
 
