@@ -44,7 +44,7 @@ struct WorkspaceView: View {
                 .tabItem { Label("Focus", systemImage: "timer") }
                 .tag(4)
         }
-        .tint(Color.themePrimary)
+        .tint(Color.themeTextPrimary)
         .onOpenURL { url in
             if url.host == "weekly-review" {
                 selectedTab = 3
@@ -118,21 +118,27 @@ private struct HomeView: View {
                         .foregroundStyle(Color.themeTextPrimary)
                         .fixedSize(horizontal: false, vertical: true)
 
+                    TodayBriefingCard(
+                        overdueCount: overdueTasks.count,
+                        dueTodayCount: todayTasks.filter { $0.dueDate != nil }.count,
+                        waitingCount: tasks.filter { $0.status == .waitingFor }.count
+                    )
+
                     Button { showingCapture = true } label: {
                         HStack(spacing: 14) {
                             Image(systemName: "plus")
                                 .font(.headline.weight(.bold))
-                                .frame(width: 38, height: 38)
+                                .frame(width: 44, height: 44)
                                 .foregroundStyle(Color.themeButtonBackground)
                                 .background(Color.white.opacity(0.82), in: Circle())
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Capture an idea")
                                     .font(.headline.weight(.semibold))
                                 Text("Get it out of your head")
-                                    .font(.caption)
+                                    .font(.body)
                                     .foregroundStyle(Color.white.opacity(0.86))
                             }
-                            Spacer()
+                            Spacer(minLength: 8)
                             Image(systemName: "arrow.up.right")
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(Color.white.opacity(0.86))
@@ -149,45 +155,40 @@ private struct HomeView: View {
                             : "home-capture-button"
                     )
 
-                    HStack(spacing: 12) {
-                        Metric(title: "Inbox", value: tasks.filter { $0.status == .inbox }.count, tint: .orange)
-                        Divider()
-                        Metric(title: "Next actions", value: todayTasks.count, tint: .blue)
-                        Divider()
-                        Metric(title: "Waiting", value: tasks.filter { $0.status == .waitingFor }.count, tint: .purple)
-                        Divider()
-                        areaFilterMenu
-                    }
-                    .padding(.vertical, 4)
-
-                    HStack(spacing: 10) {
-                        DaySignal(title: "Overdue", value: overdueTasks.count, tint: .orange)
-                        DaySignal(title: "Due today", value: todayTasks.filter { $0.dueDate != nil }.count, tint: .blue)
-                        DaySignal(title: "Open", value: todayTasks.count, tint: Color.themeTextPrimary)
-                    }
-                    .accessibilityIdentifier("today-orientation-summary")
+                    AreaFilterChips(areas: areas, selection: $selectedAreaFilter)
 
                     VStack(alignment: .leading, spacing: 12) {
-                        HStack {
-                            Text("Next up")
-                                .font(.title3.weight(.bold))
-                                .foregroundStyle(Color.themePrimary)
-                            Spacer()
-                            Text("\(todayTasks.count) actions")
-                                .font(.caption.weight(.medium))
-                                .foregroundStyle(.secondary)
-                        }
+                        Text("Next up")
+                            .font(.title3.weight(.bold))
+                            .foregroundStyle(Color.themeTextPrimary)
 
                         if todayTasks.isEmpty {
                             EmptyState(icon: "sparkles", title: "Your day is clear", message: "Capture something new or enjoy the space.")
                         } else {
-                            ForEach(todayTasks.prefix(5)) { task in
+                            ForEach(todayTasks.prefix(3)) { task in
                                 TaskListItem(task: task)
                             }
                         }
+
+                        NavigationLink {
+                            TaskListsView(initialStatus: .nextAction)
+                        } label: {
+                            HStack {
+                                Text("See all next actions")
+                                    .font(.body.weight(.semibold))
+                                Spacer()
+                                Image(systemName: "arrow.right")
+                            }
+                            .foregroundStyle(Color.themeTextPrimary)
+                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("today-see-all-next-actions")
                     }
                 }
                 .padding(20)
+                .padding(.bottom, WorkspaceStyle.controlHeight + 16)
             }
             .background(TabBackground(tint: Color.themeAccent).ignoresSafeArea())
             .navigationTitle(greeting)
@@ -242,32 +243,6 @@ private struct HomeView: View {
         return "\(day)|\(DailyBriefingService.shared.calendarAccessCacheKey)|\(taskState)"
     }
 
-    private var selectedAreaLabel: String {
-        switch selectedAreaFilter {
-        case .all: "All areas"
-        case .uncategorized: "Uncategorized"
-        case .area(let areaID): areas.first(where: { $0.id == areaID })?.name ?? "All areas"
-        }
-    }
-
-    private var areaFilterMenu: some View {
-        Menu {
-            Button("All areas") { selectedAreaFilter = .all }
-            Button("Uncategorized") { selectedAreaFilter = .uncategorized }
-            ForEach(areas) { area in
-                Button(area.name) { selectedAreaFilter = .area(area.id) }
-            }
-        } label: {
-            Image(systemName: "line.3.horizontal.decrease.circle")
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(Color.themePrimary)
-                .frame(width: 34, height: 34)
-                .background(Color.themePrimary.opacity(0.12), in: Circle())
-        }
-        .accessibilityLabel("Filter Today by (selectedAreaLabel)")
-        .accessibilityIdentifier("today-area-filter")
-    }
-
     private var greeting: String {
         let hour = Calendar.current.component(.hour, from: .now)
         return hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening"
@@ -279,23 +254,65 @@ private struct DailyBriefingPresentation: Identifiable {
     let result: DailyBriefingResult
 }
 
-private struct DaySignal: View {
-    let title: String
-    let value: Int
-    let tint: Color
+private struct TodayBriefingCard: View {
+    let overdueCount: Int
+    let dueTodayCount: Int
+    let waitingCount: Int
+
+    private var summary: String {
+        if overdueCount > 0 {
+            return "\(overdueCount) overdue \(overdueCount == 1 ? "action needs" : "actions need") your attention."
+        }
+        if dueTodayCount > 0 {
+            return "\(dueTodayCount) \(dueTodayCount == 1 ? "action is" : "actions are") ready for today."
+        }
+        if waitingCount > 0 {
+            return "Nothing is due today. \(waitingCount) \(waitingCount == 1 ? "item is" : "items are") waiting for a follow-up."
+        }
+        return "Your day is clear. Choose an action or enjoy the space."
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(value, format: .number)
-                .font(.headline.weight(.bold).monospacedDigit())
-            Text(title)
-                .font(.caption2.weight(.medium))
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Today at a glance")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(Color.themeTextPrimary)
+
+            Text(summary)
+                .font(.body)
                 .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            VStack(spacing: 0) {
+                row("Overdue", count: overdueCount, symbol: "exclamationmark.circle.fill", tint: .orange)
+                Divider().padding(.leading, 44)
+                row("Due today", count: dueTodayCount, symbol: "calendar", tint: .blue)
+                Divider().padding(.leading, 44)
+                row("Waiting", count: waitingCount, symbol: "hourglass", tint: .purple)
+            }
+            .padding(.horizontal, 12)
+            .background(Color.themeBackground.opacity(0.6), in: RoundedRectangle(cornerRadius: WorkspaceStyle.compactCornerRadius, style: .continuous))
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .background(tint.opacity(0.08), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .padding(16)
+        .background(Color.themeCardBackground, in: RoundedRectangle(cornerRadius: WorkspaceStyle.cardCornerRadius, style: .continuous))
+        .accessibilityIdentifier("today-orientation-summary")
+    }
+
+    private func row(_ title: String, count: Int, symbol: String, tint: Color) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: symbol)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(tint)
+                .frame(width: 32, height: 32)
+                .accessibilityHidden(true)
+            Text(title)
+                .font(.body)
+            Spacer(minLength: 8)
+            Text(count, format: .number)
+                .font(.headline.weight(.semibold).monospacedDigit())
+        }
+        .frame(minHeight: 44)
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -345,7 +362,7 @@ private struct DailyBriefingView: View {
 
     private func emptyCard(icon: String, title: String, message: String) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Image(systemName: icon).font(.title2).foregroundStyle(Color.themePrimary)
+            Image(systemName: icon).font(.title2).foregroundStyle(Color.themeTextPrimary)
             Text(title).font(.title3.weight(.bold))
             Text(message).font(.subheadline).foregroundStyle(.secondary)
         }
@@ -431,23 +448,6 @@ private struct DailyBriefingView: View {
     }
 }
 
-private struct Metric: View {
-    let title: String
-    let value: Int
-    let tint: Color
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            HStack(spacing: 6) {
-                Circle().fill(tint).frame(width: 7, height: 7)
-                Text("\(value)").font(.title3.weight(.bold).monospacedDigit())
-            }
-            Text(title).font(.caption).foregroundStyle(.secondary).lineLimit(1)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
 private struct InboxView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \TaskItem.createdAt, order: .reverse) private var tasks: [TaskItem]
@@ -487,45 +487,40 @@ private struct InboxView: View {
                         )
                         .padding(16)
                         .background(Color.themeCardBackground.opacity(0.76), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-                    }
-                    if !visibleTasks.isEmpty {
+                        captureCard
+                        triageCard
+                    } else {
                         VStack(alignment: .leading, spacing: 10) {
-                        HStack(alignment: .firstTextBaseline) {
-                            Text(searchText.isEmpty ? "To process" : "Results")
-                                .font(.title3.weight(.bold))
-                            Spacer()
-                            Text("\(visibleTasks.count)")
-                                .font(.subheadline.weight(.semibold).monospacedDigit())
-                                .foregroundStyle(.secondary)
-                        }
-                        LazyVStack(spacing: 10) {
-                            ForEach(visibleTasks) { task in
-                                TaskListItem(task: task, identifierPrefix: "inbox-item")
-                                    .contextMenu {
-                                        Button { task.status = .nextAction; try? modelContext.save(); TaskDueNotificationService.shared.sync(task: task) } label: {
-                                            Label("Make next action", systemImage: "arrow.right.circle")
-                                        }
-                                        Button(role: .destructive) {
-                                            let taskID = task.id
-                                            modelContext.delete(task)
-                                            try? modelContext.save()
-                                            TaskDueNotificationService.shared.cancel(taskID: taskID)
-                                        } label: {
-                                            Label("Delete", systemImage: "trash")
-                                        }
-                                    }
+                            HStack(alignment: .firstTextBaseline) {
+                                Text(searchText.isEmpty ? "To process" : "Results")
+                                    .font(.title3.weight(.bold))
+                                Spacer()
+                                Text(visibleTasks.count, format: .number)
+                                    .font(.subheadline.weight(.semibold).monospacedDigit())
+                                    .foregroundStyle(.secondary)
                             }
                         }
+
+                        LazyVStack(spacing: 10) {
+                            ForEach(Array(visibleTasks.enumerated()), id: \.element.id) { index, task in
+                                if index == 3 {
+                                    triageCard
+                                    Text("More captures")
+                                        .font(.headline.weight(.bold))
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                                inboxTaskRow(task)
+                            }
+                            if visibleTasks.count <= 3 {
+                                triageCard
+                            }
                         }
                     }
-
-                    captureCard
-                    triageCard
 
                     NavigationLink { TaskListsView() } label: {
                         HStack(spacing: 12) {
                             Image(systemName: "rectangle.3.group.fill")
-                                .foregroundStyle(Color.themePrimary)
+                                .foregroundStyle(Color.themeTextPrimary)
                                 .frame(width: 34, height: 34)
                                 .background(Color.themePrimary.opacity(0.12), in: Circle())
                             VStack(alignment: .leading, spacing: 3) {
@@ -544,9 +539,10 @@ private struct InboxView: View {
                 }
                 .padding(.horizontal, WorkspaceStyle.contentPadding)
                 .padding(.vertical, 16)
+                .padding(.bottom, WorkspaceStyle.controlHeight + 16)
             }
             .background(TabBackground(tint: Color.themePrimary).ignoresSafeArea())
-            .navigationTitle("Clear your head")
+            .navigationTitle("Inbox")
             .navigationBarTitleDisplayMode(.large)
             .onChange(of: areas.map(\.id)) { _, areaIDs in
                 if case .area(let selectedID) = selectedAreaFilter, !areaIDs.contains(selectedID) {
@@ -566,8 +562,12 @@ private struct InboxView: View {
                     .accessibilityIdentifier("inbox-search-button")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { showingCapture = true } label: { Image(systemName: "plus") }
-                        .accessibilityLabel("Capture a thought")
+                    Button { showingCapture = true } label: {
+                        Image(systemName: "plus")
+                            .frame(width: 44, height: 44)
+                    }
+                    .accessibilityLabel("Capture a thought")
+                    .accessibilityIdentifier("inbox-capture-button")
                 }
             }
             .sheet(isPresented: $showingCapture) { CaptureSheet(defaultStatus: .inbox) }
@@ -581,67 +581,102 @@ private struct InboxView: View {
 
     private var inboxHeader: some View {
         VStack(alignment: .leading, spacing: 12) {
-            TabDescription("Everything here is waiting for a decision.")
+            Text("Everything you’ve captured, ready when you are.")
+                .font(.body)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
             HStack(alignment: .firstTextBaseline) {
                 Text("To process")
-                    .font(.subheadline.weight(.semibold))
+                    .font(.headline.weight(.semibold))
                 Spacer()
-                Text("\(inboxTasks.count)")
+                Text(inboxTasks.count, format: .number)
                     .font(.title3.weight(.bold).monospacedDigit())
-                    .foregroundStyle(Color.themePrimary)
+                    .foregroundStyle(Color.themeTextPrimary)
+                    .accessibilityLabel("\(inboxTasks.count) inbox items")
             }
         }
     }
 
     private var captureCard: some View {
         Button { showingCapture = true } label: {
-            HStack(spacing: 13) {
+            HStack(spacing: 12) {
                 Image(systemName: "plus")
                     .font(.headline.weight(.bold))
-                    .frame(width: 40, height: 40)
-                        .foregroundStyle(Color.themeButtonBackground)
-                        .background(Color.white.opacity(0.82), in: Circle())
+                    .foregroundStyle(Color.themeTextPrimary)
+                    .frame(width: 44, height: 44)
+                    .background(Color.themePrimary.opacity(0.12), in: Circle())
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Capture a thought").font(.headline.weight(.semibold))
+                    Text("Capture a thought")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.primary)
                     Text("Get it out of your head in one tap")
-                        .font(.caption)
-                        .foregroundStyle(Color.white.opacity(0.86))
+                        .font(.body)
+                        .foregroundStyle(.secondary)
                 }
-                Spacer()
+                Spacer(minLength: 8)
                 Image(systemName: "arrow.up.right")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.white.opacity(0.86))
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
             }
-            .foregroundStyle(Color.white)
-            .padding(16)
-            .background(Color.themeButtonBackground, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
+            .padding(12)
+            .background(Color.themeCardBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
         .buttonStyle(.plain)
-        .accessibilityIdentifier("inbox-capture-button")
+        .accessibilityLabel("Capture a thought")
+        .accessibilityIdentifier("inbox-empty-capture-button")
     }
 
     private var triageCard: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "sparkles")
-                .foregroundStyle(Color.themePrimary)
-                .frame(width: 34, height: 34)
-                .background(Color.themePrimary.opacity(0.12), in: Circle())
-            VStack(alignment: .leading, spacing: 3) {
-                Text("Ready to sort it out?").font(.subheadline.weight(.semibold))
-                Text("Let on-device intelligence suggest what comes next.")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            Spacer()
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Ready to sort it out?", systemImage: "sparkles")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(Color.themeTextPrimary)
+            Text("Let on-device intelligence suggest what comes next.")
+                .font(.body)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
             Button { Task { await triageInbox() } } label: {
-                if isTriaging { ProgressView() } else { Text("Triage").font(.subheadline.weight(.semibold)) }
+                HStack(spacing: 8) {
+                    if isTriaging {
+                        ProgressView()
+                    } else {
+                        Image(systemName: "sparkles")
+                        Text("Triage")
+                    }
+                }
+                .frame(maxWidth: .infinity, minHeight: 44)
             }
             .buttonStyle(.borderedProminent)
             .tint(Color.themeButtonBackground)
             .disabled(isTriaging || inboxTasks.isEmpty)
+            .accessibilityLabel("Triage")
             .accessibilityIdentifier("inbox-triage-button")
         }
-        .padding(14)
+        .padding(16)
         .background(Color.themeCardBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private func inboxTaskRow(_ task: TaskItem) -> some View {
+        TaskListItem(task: task, identifierPrefix: "inbox-item")
+            .contextMenu {
+                Button {
+                    task.status = .nextAction
+                    try? modelContext.save()
+                    TaskDueNotificationService.shared.sync(task: task)
+                } label: {
+                    Label("Make next action", systemImage: "arrow.right.circle")
+                }
+                Button(role: .destructive) {
+                    let taskID = task.id
+                    modelContext.delete(task)
+                    try? modelContext.save()
+                    TaskDueNotificationService.shared.cancel(taskID: taskID)
+                } label: {
+                    Label("Delete", systemImage: "trash")
+                }
+            }
     }
 
     private func triageInbox() async {
@@ -667,6 +702,7 @@ private struct InboxSearchField: View {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(.secondary)
             TextField("Search captures", text: $text)
+                .frame(minHeight: 44)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .accessibilityIdentifier("Search captures")
@@ -674,6 +710,7 @@ private struct InboxSearchField: View {
                 Button { text = "" } label: {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundStyle(.tertiary)
+                        .frame(width: 44, height: 44)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Clear search")
@@ -709,6 +746,7 @@ private struct TaskListItem: View {
                 Image(systemName: task.status == .completed ? "checkmark.circle.fill" : "circle")
                     .font(.title3)
                     .foregroundStyle(task.status == .completed ? Color.themePrimary : Color.secondary)
+                    .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Mark capture complete")
@@ -929,7 +967,10 @@ private struct ProjectsView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    ProjectPortfolioHeader(summary: portfolioSummary)
+                    Text("Turn intentions into outcomes.")
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                     WorkspacePicker(selection: $filter)
                     AreaFilterChips(areas: areas, selection: $selectedAreaFilter)
 
@@ -959,8 +1000,11 @@ private struct ProjectsView: View {
                             }
                         }
                     }
+
+                    ProjectPortfolioHeader(summary: portfolioSummary)
                 }
                 .padding(20)
+                .padding(.bottom, WorkspaceStyle.controlHeight + 16)
             }
             .background(TabBackground(tint: Color.themePrimary).ignoresSafeArea())
             .navigationTitle("Projects")
@@ -972,7 +1016,10 @@ private struct ProjectsView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { showingNewProject = true } label: { Image(systemName: "plus") }
+                    Button { showingNewProject = true } label: {
+                        Image(systemName: "plus")
+                            .frame(width: 44, height: 44)
+                    }
                         .accessibilityLabel("Add project")
                         .accessibilityIdentifier("add-project")
                 }
@@ -993,17 +1040,17 @@ private struct ProjectPortfolioHeader: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text("OUTCOMES")
-                    .font(.caption2.weight(.bold))
-                    .tracking(1.4)
+                    .font(.caption.weight(.bold))
+                    .tracking(1.2)
                     .foregroundStyle(Color.themeTextPrimary.opacity(0.72))
                 Text("Move what matters forward.")
-                    .font(.title2.weight(.bold))
+                    .font(.headline.weight(.bold))
                     .foregroundStyle(Color.themeTextPrimary)
                 Text("Turn multi-step commitments into clear, finishable outcomes.")
-                    .font(.subheadline)
+                    .font(.body)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -1021,20 +1068,8 @@ private struct ProjectPortfolioHeader: View {
                 .foregroundStyle(summary.needsNextAction == 0 ? Color.themeTextPrimary : Color.orange)
                 .accessibilityIdentifier("project-portfolio-status")
         }
-        .padding(18)
-        .background {
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(Color.themeCardBackground)
-                .overlay(alignment: .topTrailing) {
-                    Circle()
-                        .fill(Color.themePrimary.opacity(0.20))
-                        .frame(width: 116, height: 116)
-                        .blur(radius: 2)
-                        .offset(x: 38, y: -54)
-                        .accessibilityHidden(true)
-                }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .padding(16)
+        .background(Color.themeCardBackground, in: RoundedRectangle(cornerRadius: WorkspaceStyle.cardCornerRadius, style: .continuous))
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("project-portfolio-header")
     }
@@ -1056,10 +1091,9 @@ private struct ProjectPortfolioMetric: View {
                     .foregroundStyle(Color.themeTextPrimary)
             }
             Text(label)
-                .font(.caption2)
+                .font(.body)
                 .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 10)
@@ -1090,17 +1124,17 @@ private struct ProjectsEmptyState: View {
             VStack(spacing: 6) {
                 Text(content.title).font(.headline.weight(.bold))
                 Text(content.message)
-                    .font(.subheadline)
+                    .font(.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
             if filter == .active {
                 Button(action: createProject) {
                     Label("Create a project", systemImage: "plus")
-                        .font(.subheadline.weight(.bold))
+                        .font(.body.weight(.bold))
                         .foregroundStyle(Color.themeButtonForeground)
                         .padding(.horizontal, 16)
-                        .padding(.vertical, 11)
+                        .frame(minHeight: 44)
                         .background(Color.themeButtonBackground, in: Capsule())
                 }
                 .buttonStyle(.plain)
@@ -1242,10 +1276,28 @@ struct TabDescription: View {
 
 private struct WorkspacePicker: View {
     @Binding var selection: WorkspaceFilter
+
     var body: some View {
-        HStack(spacing: 4) { ForEach(WorkspaceFilter.allCases) { filter in
-            Button { withAnimation(.easeOut(duration: 0.18)) { selection = filter } } label: { Text(filter.title).font(.subheadline.weight(.semibold)).foregroundStyle(selection == filter ? .primary : .secondary).frame(maxWidth: .infinity).padding(.vertical, 10).background(selection == filter ? Color.themeCardBackground : .clear, in: Capsule()) }.buttonStyle(.plain).accessibilityIdentifier("workspace-filter-\(filter.rawValue)")
-        }}.padding(4).background(Color.themeCardBackground.opacity(0.62), in: Capsule())
+        HStack(spacing: 4) {
+            ForEach(WorkspaceFilter.allCases) { filter in
+                Button {
+                    withAnimation(.easeOut(duration: 0.18)) {
+                        selection = filter
+                    }
+                } label: {
+                    Text(filter.title)
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(selection == filter ? .primary : .secondary)
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .padding(.horizontal, 6)
+                        .background(selection == filter ? Color.themeCardBackground : .clear, in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("workspace-filter-\(filter.rawValue)")
+            }
+        }
+        .padding(4)
+        .background(Color.themeCardBackground.opacity(0.62), in: Capsule())
     }
 }
 
@@ -1275,10 +1327,10 @@ private struct AreaFilterChips: View {
     private func filterButton(title: String, symbol: String, isSelected: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Label(title, systemImage: symbol)
-                .font(.caption.weight(.semibold))
+                .font(.body.weight(.semibold))
                 .foregroundStyle(isSelected ? Color.themeTextPrimary : .secondary)
                 .padding(.horizontal, 11)
-                .padding(.vertical, 8)
+                .frame(minHeight: 44)
                 .background(isSelected ? Color.themePrimary.opacity(0.22) : Color.themeCardBackground, in: Capsule())
         }
         .buttonStyle(.plain)
@@ -1347,9 +1399,12 @@ private struct ProjectCard: View {
                 Image(systemName: nextAction == nil ? "arrow.turn.down.right" : "arrow.right")
                     .font(.caption2.weight(.bold))
                 Text(actionText)
-                    .lineLimit(1)
+                    .font(.body.weight(.medium))
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 8)
                 Text(metrics.total == 0 ? "No actions" : "\(metrics.completed)/\(metrics.total)")
+                    .font(.caption.weight(.medium))
                     .monospacedDigit()
             }
             .font(.caption.weight(.semibold))
@@ -1787,6 +1842,7 @@ private struct ReviewView: View {
                     ReviewAreasLink(areaCount: areas.count)
                 }
                 .padding(20)
+                .padding(.bottom, WorkspaceStyle.controlHeight + 16)
             }
             .background(TabBackground(tint: Color.themeAccent).ignoresSafeArea())
             .navigationTitle("Weekly Review")
@@ -1857,6 +1913,10 @@ private struct ReviewView: View {
         } else {
             withAnimation(.easeOut(duration: 0.18), save)
         }
+        if let current = self.review {
+            self.review = nil
+            self.review = current
+        }
         try? modelContext.save()
     }
 
@@ -1876,53 +1936,66 @@ private struct ReviewLandingView: View {
     let startReview: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            VStack(alignment: .leading, spacing: 7) {
-                Text("WEEKLY RESET")
-                    .font(.caption2.weight(.bold))
-                    .tracking(1.4)
-                    .foregroundStyle(Color.themeTextPrimary.opacity(0.72))
-                Text("Make space for the week ahead.")
-                    .font(.title2.weight(.bold))
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Your overview")
+                    .font(.headline.weight(.bold))
                     .foregroundStyle(Color.themeTextPrimary)
-                Text("Close open loops, restore momentum, and choose what matters next.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
 
-            HStack(spacing: 0) {
-                ReviewMetric(value: completedReviews, label: "Reviews", symbol: "checkmark.circle.fill")
-                Divider().frame(height: 38)
-                ReviewMetric(value: streak, label: "Week streak", symbol: "flame.fill")
-            }
-
-            VStack(spacing: 0) {
-                ReviewReadinessRow(symbol: "tray.fill", title: "Inbox", value: inboxCount, detail: inboxCount == 0 ? "Clear" : "to clarify", tint: .orange)
-                Divider().padding(.leading, 48)
-                ReviewReadinessRow(symbol: "square.stack.3d.up.fill", title: "Projects", value: projectsNeedingAction, detail: projectsNeedingAction == 0 ? "Moving" : "need action", tint: Color.themeTextPrimary)
-                Divider().padding(.leading, 48)
-                ReviewReadinessRow(symbol: "hourglass", title: "Waiting", value: waitingCount, detail: waitingCount == 0 ? "Clear" : "to revisit", tint: .purple)
-            }
-            .background(Color.themeBackground.opacity(0.60), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-
-            Button(action: startReview) {
-                HStack {
-                    Text("Start weekly review")
-                    Spacer()
-                    Image(systemName: "arrow.right")
+                VStack(spacing: 0) {
+                    ReviewReadinessRow(symbol: "tray.fill", title: "Inbox", value: inboxCount, detail: inboxCount == 0 ? "Clear" : "to clarify", tint: .orange)
+                    Divider().padding(.leading, 48)
+                    ReviewReadinessRow(symbol: "square.stack.3d.up.fill", title: "Projects", value: projectsNeedingAction, detail: projectsNeedingAction == 0 ? "Moving" : "need action", tint: Color.themeTextPrimary)
+                    Divider().padding(.leading, 48)
+                    ReviewReadinessRow(symbol: "hourglass", title: "Waiting", value: waitingCount, detail: waitingCount == 0 ? "Clear" : "to revisit", tint: .purple)
                 }
-                .font(.headline.weight(.bold))
-                .foregroundStyle(Color.themeButtonForeground)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 15)
-                .background(Color.themeButtonBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .background(Color.themeBackground.opacity(0.60), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+
+                HStack(spacing: 0) {
+                    ReviewMetric(value: completedReviews, label: "Reviews", symbol: "checkmark.circle.fill")
+                    Divider().frame(height: 38)
+                    ReviewMetric(value: streak, label: "Week streak", symbol: "flame.fill")
+                }
             }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("start-weekly-review")
+            .padding(16)
+            .background(Color.themeCardBackground, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 7) {
+                    Text("WEEKLY RESET")
+                        .font(.caption.weight(.bold))
+                        .tracking(1.2)
+                        .foregroundStyle(Color.themeTextPrimary.opacity(0.72))
+                    Text("Make space for the week ahead.")
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(Color.themeTextPrimary)
+                    Text("Close open loops, restore momentum, and choose what matters next.")
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Button(action: startReview) {
+                    HStack {
+                        Text("Start weekly review")
+                        Spacer(minLength: 8)
+                        Image(systemName: "arrow.right")
+                            .accessibilityHidden(true)
+                    }
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(Color.themeButtonForeground)
+                    .padding(.horizontal, 16)
+                    .frame(maxWidth: .infinity, minHeight: 52)
+                    .background(Color.themeButtonBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Start weekly review")
+                .accessibilityIdentifier("start-weekly-review")
+            }
+            .padding(18)
+            .background(Color.themeCardBackground, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
         }
-        .padding(18)
-        .background(Color.themeCardBackground, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("review-landing")
     }
 }
@@ -1962,20 +2035,23 @@ private struct ReviewReadinessRow: View {
                 .foregroundStyle(tint)
                 .frame(width: 34, height: 34)
                 .background(tint.opacity(0.10), in: Circle())
-            Text(title).font(.subheadline.weight(.semibold))
-            Spacer()
-            Text(value, format: .number).font(.headline.weight(.bold).monospacedDigit())
-            Text(detail).font(.caption).foregroundStyle(.secondary).frame(width: 72, alignment: .leading)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.body.weight(.semibold))
+                Text(detail).font(.footnote).foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 8)
+            Text(value, format: .number)
+                .font(.headline.weight(.bold).monospacedDigit())
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 10)
+        .frame(minHeight: 54)
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("review-readiness-\(title.lowercased())")
     }
 }
 
 private struct ReviewSessionView: View {
-    let review: WeeklyReview
+    @Bindable var review: WeeklyReview
     let tasks: [TaskItem]
     let projectsNeedingAction: [Project]
     let openTaskCount: Int
@@ -2063,7 +2139,7 @@ private struct ReviewStepNavigator: View {
                         .font(.caption.weight(.bold))
                         .foregroundStyle(item.sortOrder == displayedStep ? Color.themeButtonForeground : tint(for: item))
                         .frame(maxWidth: .infinity)
-                        .frame(height: 36)
+                        .frame(minHeight: 44)
                         .background(item.sortOrder == displayedStep ? Color.themeButtonBackground : Color.themeCardBackground, in: Circle())
                 }
                 .buttonStyle(.plain)
@@ -2072,6 +2148,7 @@ private struct ReviewStepNavigator: View {
                 .accessibilityIdentifier("review-step-navigator-\(item.sortOrder)")
             }
         }
+        .accessibilityElement(children: .contain)
         .accessibilityLabel("Review steps")
     }
 
@@ -2263,6 +2340,7 @@ private struct ReviewCompletionView: View {
         }
         .padding(20)
         .background(Color.themeCardBackground, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("review-completion-summary")
     }
 }
@@ -2369,7 +2447,7 @@ private struct EmptyState: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 32, weight: .medium)).foregroundStyle(Color.themePrimary)
+            Image(systemName: icon).font(.system(size: 32, weight: .medium)).foregroundStyle(Color.themeTextPrimary)
             Text(title).font(.headline)
             Text(message).font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
         }

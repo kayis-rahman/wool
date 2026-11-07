@@ -30,20 +30,34 @@ struct iOSContentView: View {
 
                 activeTaskCard
 
-                PrimaryButton(
-                    title: FocusTabBehavior.actionTitle(
+                Button {
+                    if timer.isRunning {
+                        Task { await TimerSyncManager.shared.syncTimerAction(.pause) }
+                    } else {
+                        startWithPermission()
+                    }
+                } label: {
+                    Label(
+                        FocusTabBehavior.actionTitle(
+                            isRunning: timer.isRunning,
+                            remainingSeconds: timer.remainingSeconds,
+                            currentDuration: timer.currentDuration
+                        ),
+                        systemImage: timer.isRunning ? "pause.fill" : "play.fill"
+                    )
+                    .font(.headline.weight(.semibold))
+                    .frame(maxWidth: .infinity, minHeight: WorkspaceStyle.controlHeight)
+                    .padding(.horizontal, 16)
+                }
+                .foregroundStyle(Color.themeButtonForeground)
+                .background(Color.themeButtonBackground, in: RoundedRectangle(cornerRadius: WorkspaceStyle.cardCornerRadius, style: .continuous))
+                .buttonStyle(PressFeedbackButtonStyle())
+                .accessibilityLabel(
+                    FocusTabBehavior.actionTitle(
                         isRunning: timer.isRunning,
                         remainingSeconds: timer.remainingSeconds,
                         currentDuration: timer.currentDuration
-                    ),
-                    icon: timer.isRunning ? "pause.fill" : "play.fill",
-                    action: {
-                        if timer.isRunning {
-                            Task { await TimerSyncManager.shared.syncTimerAction(.pause) }
-                        } else {
-                            startWithPermission()
-                        }
-                    }
+                    )
                 )
                 .accessibilityIdentifier("focus-primary-action")
 
@@ -55,7 +69,7 @@ struct iOSContentView: View {
             }
             .padding(.horizontal, WorkspaceStyle.contentPadding)
             .padding(.top, 14)
-            .padding(.bottom, 24)
+            .padding(.bottom, WorkspaceStyle.controlHeight + 16)
         }
         .background(phaseBackground.ignoresSafeArea())
         .navigationTitle("Focus")
@@ -153,7 +167,7 @@ struct iOSContentView: View {
             HStack(spacing: 13) {
                 Image(systemName: currentTask == nil ? "scope" : "checkmark.circle.fill")
                     .font(.title3.weight(.semibold))
-                    .foregroundStyle(currentTask == nil ? Color.themePrimary : Color.themeAccent)
+                    .foregroundStyle(Color.themeTextPrimary)
                     .frame(width: 42, height: 42)
                     .background(Color.themePrimary.opacity(0.14), in: Circle())
 
@@ -203,11 +217,11 @@ struct iOSContentView: View {
                             _ = timer.selectTask(id: task.id, title: task.title)
                         } label: {
                             Text(task.title)
-                                .font(.caption.weight(.medium))
+                                .font(.body.weight(.medium))
                                 .foregroundStyle(.primary)
                                 .lineLimit(1)
                                 .padding(.horizontal, 13)
-                                .padding(.vertical, 10)
+                                .frame(minHeight: 44)
                                 .background(Color.themeCardBackground.opacity(0.7), in: Capsule())
                         }
                         .buttonStyle(.plain)
