@@ -38,9 +38,9 @@ The primary iOS workspace uses five tabs:
 2. **Inbox** — unprocessed captures, search, quick capture, and triage.
 3. **Projects** — active outcomes and their linked actions, with a reversible
    archive for projects that are set aside.
-4. **Focus** — Pomodoro timer connected to the task being worked on.
-5. **Review** — Weekly Review, Someday/Maybe, Areas overview, and review
+4. **Review** — Weekly Review, Someday/Maybe, Areas overview, and review
    streaks.
+5. **Focus** — Pomodoro timer connected to the task being worked on.
 
 Areas are available as filters across Today, Inbox, and Projects rather than
 as a separate workflow tab. Settings and integrations are accessed from the
