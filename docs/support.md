@@ -24,4 +24,4 @@ Wool v1 is a privacy-first, local-first GTD task manager for iOS.
 
 ## Feedback
 
-Support and feedback are tracked at: https://github.com/kayis-rahman/synapse/issues
+Support and feedback are tracked at: https://github.com/kayis-rahman/wool/issues
