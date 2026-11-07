@@ -43,7 +43,7 @@ final class WatchConnectivityManager {
             "autoStartNextSession": timer.autoStartNextSession,
             "shortBreaksCompleted": timer.shortBreaksCompleted,
             "lastModifiedTimestamp": timer.lastModifiedTimestamp
-        ] as [String : Any]
+        ] as [String: Any]
         
         sendMessage([Keys.timerState: state])
     }
@@ -139,7 +139,7 @@ final class WatchConnectivityDelegate: NSObject, WCSessionDelegate {
         }
     }
     
-    func session(_ session: WCSession, didReceiveMessage message: [String : Any]) {
+    func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
         Task { @MainActor in
             WatchConnectivityManager.shared?.handleIncomingMessage(message)
         }

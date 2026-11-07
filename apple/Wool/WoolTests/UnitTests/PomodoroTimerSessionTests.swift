@@ -54,7 +54,7 @@ final class PomodoroTimerSessionTests: XCTestCase {
     // MARK: - onSessionCompleted Callback
 
     func testOnSessionCompletedCallbackFires() async {
-        var completedPhase: Phase? = nil
+        var completedPhase: Phase?
         var completedDuration: Int = 0
 
         timer.onSessionCompleted = { phase, duration in

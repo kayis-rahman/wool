@@ -14,7 +14,7 @@ CloudKit/SwiftData schema state required by that app version.
 
 - Initial Wool release candidate.
 - App build: `1`.
-- CloudKit container: `iCloud.com.sparkage.synapse`.
+- CloudKit container: `iCloud.com.sparkage.wool`.
 - SwiftData schema: `1` (`WoolSchemaV1`).
 - Malayalam voice, Gmail, and GitHub Projects flags default to disabled.
 - Compatibility target: fresh install and upgrade from the pre-versioned

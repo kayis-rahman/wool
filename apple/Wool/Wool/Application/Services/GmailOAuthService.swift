@@ -103,9 +103,7 @@ final class GmailOAuthService: NSObject, ASWebAuthenticationPresentationContextP
     private func authenticate(url: URL, scheme: String) async throws -> URL {
         try await withCheckedThrowingContinuation { continuation in
             let session = ASWebAuthenticationSession(url: url, callbackURLScheme: scheme) { callback, error in
-                if let callback { continuation.resume(returning: callback) }
-                else if let error = error as? ASWebAuthenticationSessionError, error.code == .canceledLogin { continuation.resume(throwing: GmailServiceError.cancelled) }
-                else { continuation.resume(throwing: error ?? GmailServiceError.authorizationRequired) }
+                if let callback { continuation.resume(returning: callback) } else if let error = error as? ASWebAuthenticationSessionError, error.code == .canceledLogin { continuation.resume(throwing: GmailServiceError.cancelled) } else { continuation.resume(throwing: error ?? GmailServiceError.authorizationRequired) }
             }
             session.presentationContextProvider = self
             session.prefersEphemeralWebBrowserSession = true
