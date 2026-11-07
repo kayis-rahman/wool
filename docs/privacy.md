@@ -38,4 +38,4 @@ You can leave your data on device by staying offline or not signing in to iCloud
 
 ## Contact
 
-Questions about this policy can be filed at the Wool issue tracker: https://github.com/kayis-rahman/synapse/issues
+Questions about this policy can be filed at the Wool issue tracker: https://github.com/kayis-rahman/wool/issues

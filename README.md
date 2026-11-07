@@ -32,8 +32,8 @@ The OS logger subsystem (`com.sparkage.wool`), the Keychain service name
 environment keys follow the same naming.
 
 The source repository and issue tracker still live at
-`github.com/kayis-rahman/synapse`; renaming the repository is outside this
-migration.
+`github.com/kayis-rahman/wool`; the repository was renamed from
+`synapse` to `wool`.
 
 ## Build and test
 
@@ -42,7 +42,7 @@ Open `apple/Wool/Wool.xcodeproj` in Xcode. The shared schemes are:
 - `Wool iOS` - iOS app
 - `Wool iOS Unit Tests` - unit/service/SwiftData tests
 - `Wool macOS` - macOS app
-- `WoolWatch Watch App` - watchOS app
+- `WoolWatchOs Watch App` - watchOS app
 
 Run iOS unit tests from the command line:
 

@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "6D634A432E787FFD00A9F1D6"
-               BuildableName = "WoolWatch Watch App.app"
-               BlueprintName = "WoolWatch Watch App"
+               BlueprintIdentifier = "6D7300EA2EAAA98400D75371"
+               BuildableName = "WoolWatchOs Watch App.app"
+               BlueprintName = "WoolWatchOs Watch App"
                ReferencedContainer = "container:Wool.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -44,9 +44,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "6D634A432E787FFD00A9F1D6"
-            BuildableName = "WoolWatch Watch App.app"
-            BlueprintName = "WoolWatch Watch App"
+            BlueprintIdentifier = "6D7300EA2EAAA98400D75371"
+            BuildableName = "WoolWatchOs Watch App.app"
+            BlueprintName = "WoolWatchOs Watch App"
             ReferencedContainer = "container:Wool.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -61,9 +61,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "6D634A432E787FFD00A9F1D6"
-            BuildableName = "WoolWatch Watch App.app"
-            BlueprintName = "WoolWatch Watch App"
+            BlueprintIdentifier = "6D7300EA2EAAA98400D75371"
+            BuildableName = "WoolWatchOs Watch App.app"
+            BlueprintName = "WoolWatchOs Watch App"
             ReferencedContainer = "container:Wool.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
