@@ -55,7 +55,7 @@ xcodebuild -scheme "Wool iOS Unit Tests" \
 ## Continuous integration
 
 GitHub Actions (`.github/workflows/ci.yml`) runs the `Wool iOS Unit Tests` suite
-on every pull request and push to `develop` on a self-hosted macOS runner.
+on every pull request and push to `main` on a self-hosted macOS runner.
 Xcode Cloud is configured manually and is not wired to automatic pushes or PRs;
 see `docs/xcode-cloud-setup.md`. It archives `Wool iOS` for TestFlight internal
 testing through the manual "Wool iOS archive (manual)" workflow (or a `v*.*.*`
