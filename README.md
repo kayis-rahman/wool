@@ -42,7 +42,7 @@ Open `apple/Wool/Wool.xcodeproj` in Xcode. The shared schemes are:
 - `Wool iOS` - iOS app
 - `Wool iOS Unit Tests` - unit/service/SwiftData tests
 - `Wool macOS` - macOS app
-- `WoolWatch Watch App` - watchOS app
+- `WoolWatchOs Watch App` - watchOS app
 
 Run iOS unit tests from the command line:
 
