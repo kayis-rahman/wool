@@ -32,8 +32,8 @@ The OS logger subsystem (`com.sparkage.wool`), the Keychain service name
 environment keys follow the same naming.
 
 The source repository and issue tracker still live at
-`github.com/kayis-rahman/synapse`; renaming the repository is outside this
-migration.
+`github.com/kayis-rahman/wool`; the repository was renamed from
+`synapse` to `wool`.
 
 ## Build and test
 
