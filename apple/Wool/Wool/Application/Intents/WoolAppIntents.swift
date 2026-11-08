@@ -36,8 +36,7 @@ enum WoolIntentSupport {
         ) {
             throw error
         }
-        do { return ModelContext(try WoolModelContainer.makeIntentContainer()) }
-        catch { throw WoolIntentError.cloudKitUnavailable }
+        do { return ModelContext(try WoolModelContainer.makeIntentContainer()) } catch { throw WoolIntentError.cloudKitUnavailable }
     }
 
     static func save(_ context: ModelContext) throws {

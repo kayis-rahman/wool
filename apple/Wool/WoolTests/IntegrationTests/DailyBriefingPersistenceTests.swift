@@ -38,7 +38,7 @@ final class DailyBriefingPersistenceTests: XCTestCase {
     func testOfflineBriefingUsesLocalStoreAndOmitsUnavailableCalendar() async throws {
         let marker = UUID().uuidString
         let task = TaskItem(title: "Offline action \(marker)", status: .nextAction, dueDate: .now)
-        let service = DailyBriefingService(calendarProvider: EmptyDailyBriefingCalendarProvider())
+        let service = DailyBriefingService(calendarProvider: EmptyDailyBriefingCalendarProvider(), narrativeProvider: { _ in nil })
 
         let result = await service.makeBriefing(tasks: [task])
 

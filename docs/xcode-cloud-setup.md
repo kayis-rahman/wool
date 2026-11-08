@@ -38,7 +38,7 @@ notifications.
    `Wool iOS Unit Tests`, action Test on the iOS Simulator) and a
    **"Wool macOS"** workflow (scheme `Wool macOS`, action Archive) later; neither
    is required for the first TestFlight build. Unit tests may also be enabled as
-   a required check via Xcode Cloud branch protection on `develop` if the captain
+   a required check via Xcode Cloud branch protection on `main` if the captain
    wants PR gating.
 
 4. Confirm signing: Xcode Cloud manages certificates/profiles automatically

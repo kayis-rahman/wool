@@ -86,10 +86,7 @@ final class CaptureService {
         }
 
         let area: String?
-        if normalized.contains("work") || normalized.contains("office") || normalized.contains("client") { area = "Work" }
-        else if normalized.contains("doctor") || normalized.contains("dentist") || normalized.contains("health") || normalized.contains("gym") { area = "Health" }
-        else if normalized.contains("family") || normalized.contains("home") || normalized.contains("personal") { area = "Personal" }
-        else { area = nil }
+        if normalized.contains("work") || normalized.contains("office") || normalized.contains("client") { area = "Work" } else if normalized.contains("doctor") || normalized.contains("dentist") || normalized.contains("health") || normalized.contains("gym") { area = "Health" } else if normalized.contains("family") || normalized.contains("home") || normalized.contains("personal") { area = "Personal" } else { area = nil }
         return Classification(status: status, area: area, dueDate: parseDate(in: normalized))
     }
 
@@ -128,9 +125,9 @@ final class CaptureService {
                 return nil
             }
 
-            let result = await group.next() ?? nil
+            let result = await group.next()
             group.cancelAll()
-            return result
+            return result.flatMap { $0 }
         }
     }
 

@@ -32,8 +32,8 @@ The OS logger subsystem (`com.sparkage.wool`), the Keychain service name
 environment keys follow the same naming.
 
 The source repository and issue tracker still live at
-`github.com/kayis-rahman/synapse`; renaming the repository is outside this
-migration.
+`github.com/kayis-rahman/wool`; the repository was renamed from
+`synapse` to `wool`.
 
 ## Build and test
 
@@ -42,7 +42,7 @@ Open `apple/Wool/Wool.xcodeproj` in Xcode. The shared schemes are:
 - `Wool iOS` - iOS app
 - `Wool iOS Unit Tests` - unit/service/SwiftData tests
 - `Wool macOS` - macOS app
-- `WoolWatch Watch App` - watchOS app
+- `WoolWatchOs Watch App` - watchOS app
 
 Run iOS unit tests from the command line:
 
@@ -55,7 +55,7 @@ xcodebuild -scheme "Wool iOS Unit Tests" \
 ## Continuous integration
 
 GitHub Actions (`.github/workflows/ci.yml`) runs the `Wool iOS Unit Tests` suite
-on every pull request and push to `develop` on a self-hosted macOS runner.
+on every pull request and push to `main` on a self-hosted macOS runner.
 Xcode Cloud is configured manually and is not wired to automatic pushes or PRs;
 see `docs/xcode-cloud-setup.md`. It archives `Wool iOS` for TestFlight internal
 testing through the manual "Wool iOS archive (manual)" workflow (or a `v*.*.*`

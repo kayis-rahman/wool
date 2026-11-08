@@ -17,14 +17,4 @@ struct TimerStateChangeEvent: Codable {
         case userId, sourceDeviceId, previousState, newState
         case phase, action, timestamp
     }
-    
-    init(userId: UUID, sourceDeviceId: String, previousState: TimerStateDto?, newState: TimerStateDto, phase: String, action: String, timestamp: Date) {
-        self.userId = userId
-        self.sourceDeviceId = sourceDeviceId
-        self.previousState = previousState
-        self.newState = newState
-        self.phase = phase
-        self.action = action
-        self.timestamp = timestamp
-    }
 }

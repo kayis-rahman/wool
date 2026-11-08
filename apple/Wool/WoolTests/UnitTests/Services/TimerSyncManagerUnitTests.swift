@@ -19,10 +19,6 @@ final class TimerSyncManagerUnitTests: XCTestCase {
         syncManager.configure(with: mockTimer)
     }
 
-    override func tearDownWithError() throws {
-        try super.tearDownWithError()
-    }
-
     // MARK: - Timer Configuration Tests
 
     func testTimerConfiguration() async {
