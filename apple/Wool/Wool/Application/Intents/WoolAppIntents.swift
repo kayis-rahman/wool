@@ -36,8 +36,7 @@ enum WoolIntentSupport {
         ) {
             throw error
         }
-        do { return ModelContext(try WoolModelContainer.makeIntentContainer()) }
-        catch { throw WoolIntentError.cloudKitUnavailable }
+        do { return ModelContext(try WoolModelContainer.makeIntentContainer()) } catch { throw WoolIntentError.cloudKitUnavailable }
     }
 
     static func save(_ context: ModelContext) throws {
@@ -60,11 +59,11 @@ enum WoolIntentSupport {
         if abs(lhsCount - rhsCount) > 2 { return Int.max }
         var previous = Array(0...rhsCount)
         var current = Array(repeating: 0, count: rhsCount + 1)
-        for (i, l) in lhs.enumerated() {
-            current[0] = i + 1
-            for (j, r) in rhs.enumerated() {
-                let substitutionCost = l == r ? 0 : 1
-                current[j + 1] = min(previous[j + 1] + 1, current[j] + 1, previous[j] + substitutionCost)
+        for (leftIndex, leftChar) in lhs.enumerated() {
+            current[0] = leftIndex + 1
+            for (rightIndex, rightChar) in rhs.enumerated() {
+                let substitutionCost = leftChar == rightChar ? 0 : 1
+                current[rightIndex + 1] = min(previous[rightIndex + 1] + 1, current[rightIndex] + 1, previous[rightIndex] + substitutionCost)
             }
             swap(&previous, &current)
         }
@@ -186,7 +185,13 @@ struct StartWeeklyReviewIntent: AppIntent {
         let service = await WeeklyReviewService.shared
         if await service.resumeReview(from: reviews) == nil,
            await service.review(forWeekContaining: .now, from: reviews) == nil {
-            context.insert(await service.makeWeeklyReview())
+            let newReview = await service.makeWeeklyReview()
+            context.insert(newReview)
+            // SwiftData does not insert relationship children automatically.
+            for item in newReview.checklistItems ?? [] {
+                item.review = newReview
+                context.insert(item)
+            }
             try WoolIntentSupport.save(context)
         }
         UserDefaults.standard.set("weekly-review", forKey: WoolModelContainer.pendingDestinationKey)
@@ -253,7 +258,7 @@ struct ShowNextActionsIntent: AppIntent {
     func perform() async throws -> some IntentResult {
         let context = try await WoolIntentSupport.context()
         let tasks = try context.fetch(FetchDescriptor<TaskItem>())
-        let actions = tasks.filter { $0.status == .nextAction && ($0.dueDate == nil || Calendar.current.isDateInToday($0.dueDate!)) }
+        let actions = tasks.filter { $0.status == .nextAction && ($0.dueDate == nil || $0.dueDate.flatMap { Calendar.current.isDateInToday($0) } ?? false) }
             .sorted { $0.createdAt < $1.createdAt }
         let message = actions.isEmpty ? "You have no open Next Actions for today." : "Today's Next Actions: " + actions.map(\.title).joined(separator: ", ")
         return .result(dialog: IntentDialog(stringLiteral: message))

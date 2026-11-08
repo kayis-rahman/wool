@@ -4,6 +4,7 @@ struct CircularTimerView: View {
     @Environment(PomodoroTimer.self) var timer
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var sandglassRotation = 0.0
+    @ScaledMetric(relativeTo: .largeTitle) private var timerFontSize: CGFloat = 87.5
 
     let size: CGFloat
     let showSessionProgress: Bool
@@ -33,15 +34,15 @@ struct CircularTimerView: View {
 
             VStack(alignment: .center, spacing: size * 0.025) {
                 Text(timer.remainingSeconds.mmss)
-                    .font(.system(size: size * 0.35, weight: .bold, design: .rounded))
+                    .font(.system(size: timerFontSize, weight: .bold, design: .rounded))
                     .monospacedDigit()
                     .foregroundColor(.themeTextPrimary)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.62)
+                    .minimumScaleFactor(0.5)
                     .layoutPriority(1)
 
                 Text(statusText)
-                    .font(.system(size: size * 0.04, weight: .medium, design: .rounded))
+                    .font(.footnote.weight(.medium))
                     .foregroundColor(.themeTextSecondary.opacity(0.62))
                     .multilineTextAlignment(.center)
 
@@ -59,7 +60,7 @@ struct CircularTimerView: View {
             .frame(maxWidth: .infinity, alignment: .center)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: size * 0.62)
+        .frame(minHeight: max(size * 0.62, timerFontSize * 1.5))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Focus timer")
         .accessibilityValue("\(timer.remainingSeconds.mmss) remaining, \(timer.phase.displayName), \(timer.isRunning ? "running" : "paused"), \(cycleAccessibilityValue)")
@@ -141,7 +142,7 @@ private struct SandglassCycleProgress: View {
             }
 
             Text(isLongBreak && isComplete ? "Long break · 4 cycles complete" : "Cycle \(currentIndex + 1) of \(total)")
-                .font(.system(size: 10, weight: .medium, design: .rounded))
+                .font(.caption.weight(.medium))
                 .foregroundColor(isLongBreak && isComplete ? currentColor : .themeTextSecondary.opacity(0.54))
         }
         .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: completed)
