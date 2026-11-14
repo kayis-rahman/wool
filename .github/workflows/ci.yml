@@ -24,25 +24,15 @@ jobs:
         run: |
           memory_pressure
 
-      - name: Boot iPhone 18 Pro simulator
-        run: |
-          DEVICE_ID="$(xcrun simctl list devices available | awk -v name='iPhone 18 Pro' 'index($0, name " (") { match($0, /[A-F0-9-]{36}/); if (RSTART) { print substr($0, RSTART, RLENGTH); exit } }')"
-          if [ -z "$DEVICE_ID" ]; then
-            echo "No available iPhone 18 Pro simulator found."
-            exit 1
-          fi
-          echo "DEVICE_ID=$DEVICE_ID" >> "$GITHUB_ENV"
-          xcrun simctl boot "$DEVICE_ID" 2>/dev/null || true
-          xcrun simctl bootstatus "$DEVICE_ID" -b
+      - name: Create dedicated iPhone 18 Pro simulator
+        run: scripts/ci-unit-tests.sh create
 
       - name: Build and run unit tests
-        run: |
-          xcodebuild test \
-            -project apple/Wool/Wool.xcodeproj \
-            -scheme "Wool iOS Unit Tests" \
-            -destination "platform=iOS Simulator,id=${DEVICE_ID}" \
-            -derivedDataPath "${DERIVED_DATA_PATH}" \
-            -enableCodeCoverage NO
+        run: scripts/ci-unit-tests.sh test
+
+      - name: Delete dedicated simulator
+        if: always()
+        run: scripts/ci-unit-tests.sh cleanup
 
       - name: Clean derived data
         if: always()
