@@ -20,19 +20,10 @@ create() {
             xcrun simctl delete "$stale" 2>/dev/null || true
         done
 
-    local runtime udid
-    runtime="$(xcrun simctl list runtimes available -j | python3 -c '
-import json, sys
-rts = [r for r in json.load(sys.stdin)["runtimes"] if r["identifier"].startswith("com.apple.CoreSimulator.SimRuntime.iOS-") and r.get("isAvailable", True)]
-rts.sort(key=lambda r: [int(x) for x in r["version"].split(".")])
-print(rts[-1]["identifier"] if rts else "")')"
-    if [ -z "$runtime" ]; then
-        echo "No available iOS simulator runtime found." >&2
-        exit 1
-    fi
-    udid="$(xcrun simctl create "$DEVICE_NAME" "$DEVICE_TYPE" "$runtime")"
+    local udid
+    udid="$(xcrun simctl create "$DEVICE_NAME" "$DEVICE_TYPE")"
     echo "$udid" > "$STATE_FILE"
-    echo "Created $DEVICE_NAME ($udid) on $runtime"
+    echo "Created $DEVICE_NAME ($udid)"
     xcrun simctl boot "$udid"
     xcrun simctl bootstatus "$udid" -b
 }
